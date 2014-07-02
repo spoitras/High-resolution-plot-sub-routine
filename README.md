@@ -1,4 +1,4 @@
-High-resolution-plot-sub-routine
+High resolution plot sub-routine
 ================================
 
 Sub-routine in CBMBasic and ACME 6502 assembly to turn on any pixel in C64 high resolution mode.
