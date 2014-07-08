@@ -1,9 +1,6 @@
 !cpu 6502
 !to "build/plot-asm.prg",cbm
 
-* = $8000     				            ; start address for 6502 code
-; SYS 32768
-
 base = $2000
 scroly = $d011
 vmcsb = $d018
@@ -12,25 +9,59 @@ colmap = $0400
 scrlen = 8000
 maplen = 1000
 
-tempa = $fb
-tabptr = tempa
-tabsiz = $9000
-hpsn = tabsiz+2
-vpsn = hpsn+2
-filval = vpsn + 1
+xcoord = $fb
+ycoord = $fd
 
+tabptr = xcoord
+tabsiz = $9000
+filval = tabsiz+2
+
+bmpage = $ff
+mask = $59
+loc = $5a
+store = $5c
+
+* = $8000     				            ; start ycoord for 6502 code
+; sys 32768
 jmp start
 
-; plot routine
-plot	lda #<base+(vpos/8)*320+(hpos/8)*8+(vpos and 7)
-		sta tempa
-		lda #>base+(vpos/8)*320+(hpos/8)*8+(vpos and 7)
-		sta tempa+1
-
-		lda #2^7-(hpos and 7)
-		ldy #0
-		ora (tempa),y
-		sta (tempa),y
+plotbit	lda	xcoord
+		and	#7
+		tax
+		sec
+		lda	#0
+		sta loc
+shift	ror
+		dex
+		bpl shift
+		sta mask
+		lda xcoord
+		and #$f8
+		sta store
+		lda ycoord
+		lsr
+		lsr
+		lsr
+		sta loc+1
+		lsr
+		ror	loc
+		lsr
+		ror	loc
+		adc loc+1
+		sta loc+1
+		lda ycoord
+		and #7
+		adc loc
+		adc store
+		sta loc
+		lda loc+1
+		adc xcoord+1
+		adc bmpage
+		sta loc+1
+		ldy	#0
+		lda (loc),y
+		ora mask,y
+		sta (loc),y
 		rts
 
 ; fill routine
@@ -55,7 +86,9 @@ fini	rts
 
 ; main routine
 ; define bit map and enable high-res
-start 	lda #$18
+start 	lda #$20
+		sta bmpage
+		lda #$18
 		sta vmcsb
 
 		lda scroly
@@ -101,8 +134,12 @@ start 	lda #$18
 
 
 ; set horizontal and vertical position
-		vpos = 100
-		hpos = 160
-		jsr plot
+		lda #<160
+		sta xcoord
+		lda #>160
+		sta xcoord+1
+		lda #100
+		sta ycoord
+		jsr plotbit
 
 inf		jmp	inf
