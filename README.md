@@ -13,4 +13,7 @@ calculation that makes high resolution graphics impractical for BASIC programmer
 
 Reference
 ---------
-This code is adapted to ACME crossassembler from *Commodre 64/128 Assembly Language Programming* (Mark Andrews).
+The code for the clear and fill routine is adapted to ACME crossassembler from *Commodre 64/128 Assembly Language Programming* (Mark Andrews).
+
+The code for the plot routine is adapted from Advanced Macine Code Programming for the Commodore 64 (Stephenson & Stephenson).
+
