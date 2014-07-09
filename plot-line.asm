@@ -1,5 +1,5 @@
 !cpu 6502
-!to "build/plot-asm.prg",cbm
+!to "build/plot-line.prg",cbm
 
 base = $2000
 SCROLY = $D011
@@ -23,8 +23,13 @@ mask = $59
 loc = $5a
 store = $5c
 
-* = $8000		; start address for 6502 code
-; sys 32768
+* = $0801                               ; BASIC starts at #2049 = $0801
+
+!byte $0d,$08,$dc,$07,$9e,$20,$34,$39   ; BASIC to load $c000 inserts 
+!byte $31,$35,$32,$00,$00,$00           ; BASIC line: 2012 SYS 49152
+
+* = $c000     				            ; start address for 6502 code
+
 jmp start
 
 
@@ -137,13 +142,40 @@ start 	lda #$20
 		jsr blkfil
 
 
-; set horizontal and vertical position
-		lda #<160
+; draw horizontal line
+		lda #100
+		sta ycoord
+		lda #0
+		sta xcoord
+		sta xcoord+1
+agin	jsr plotbit
+		inc xcoord
+		bne next
+		inc xcoord+1
+next	lda xcoord+1
+		cmp #>320
+		bcc agin
+		lda xcoord
+		cmp #<320
+		bcc agin
+
+; draw vertical line
+		lda #0
+		sta ycoord
+point	lda #<160
 		sta xcoord
 		lda #>160
 		sta xcoord+1
-		lda #100
-		sta ycoord
 		jsr plotbit
+		inc xcoord
+		bne skip
+		inc xcoord+1
+skip	jsr plotbit
+		ldx	ycoord
+		inx
+		stx ycoord
+		cpx #200
+		bcc point
+
 
 inf		jmp	inf
