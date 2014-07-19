@@ -4,7 +4,7 @@ High resolution plot sub-routine
 Sub-routine in CBMBasic and ACME 6502 assembly to turn on any pixel in C64 high resolution mode.
 
 |        File       |                    Description                   |
-|:-----------------:|:------------------------------------------------:|
+|-------------------|--------------------------------------------------|
 | plot.asm          | ACME assembly code for plot routine              |
 | plot-line.asm     | Plotting lines with ACME assembler routine       |
 | plot-joystick.asm | Joystick movements plot points across the screen |
