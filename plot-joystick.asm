@@ -1,5 +1,5 @@
 !cpu 6502
-!to "build/plot-line.prg",cbm
+!to "build/plot-joy.prg",cbm
 
 base = $2000
 SCROLY = $D011
@@ -8,6 +8,7 @@ colmap = $0400
 C2DDRA = $DD02
 CI2PRA = $DD00
 TIME = $a2
+CIAPRA = $DC00
 
 delay = 1 	; wait delay/60 seconds
 
@@ -26,6 +27,7 @@ mask = $59
 loc = $5a
 store = $5c
 
+
 * = $0801                               ; BASIC starts at #2049 = $0801
 
 !byte $0d,$08,$dc,$07,$9e,$20,$34,$39   ; BASIC to load $c000 inserts 
@@ -35,12 +37,73 @@ store = $5c
 
 jmp start
 
+vector	!byte	$00,$00,$00,$00,$00,$00,$00,$00
+		!byte	$00,$00,$01,$01,$01,$ff,$01,$00
+		!byte	$00,$00,$ff,$01,$ff,$ff,$ff,$00
+		!byte	$00,$00,$00,$01,$00,$ff,$00,$00
+
 wait  lda #0
       sta TIME
 .loop lda TIME
       cmp #delay 	
       bne .loop
       rts
+
+readJS	lda	CIAPRA
+		and	#$0f
+		asl
+		tax
+		lda	vector,x
+		cmp #$ff
+		beq xSus
+		clc
+		adc xcoord
+		sta xcoord
+		lda #0
+		adc xcoord+1
+		sta xcoord+1
+		lda xcoord+1
+		cmp #>320
+		bcc	sety
+		lda xcoord
+		cmp #<320
+		bcc sety
+		lda #0
+		sta xcoord
+		sta xcoord+1
+		jmp sety
+xSus	sec
+		lda	xcoord
+		sbc #1
+		sta xcoord
+		lda xcoord+1
+		sbc #0
+		sta xcoord+1
+		cmp #0
+		bne sety
+		lda xcoord
+		cmp #0
+		bne sety
+		lda #<319
+		sta xcoord
+		lda #>319
+		sta xcoord+1
+sety	lda vector+1,x
+		cmp #$ff
+		beq ySus
+		clc
+		adc ycoord
+		cmp #200
+		bcc done
+		lda #0
+		jmp done
+ySus    clc
+		adc ycoord
+		cmp #200
+		bcc done
+		lda #199	
+done	sta ycoord
+		rts
 
 ; address = base + int(y/8) * 320 + (y and 7) + int(x/8) * 8
 plotbit	lda	xcoord
@@ -104,7 +167,8 @@ fini	rts
 
 ; main routine
 ; define bit map and enable high-res
-start 	lda #$20
+start 	lda #$0
+		lda #$20
 		sta bmpage
 		lda #$18
 		sta VMCSB
@@ -149,44 +213,16 @@ start 	lda #$20
 		lda #>maplen
 		sta tabsiz+1
 		jsr blkfil
-
-
-; draw horizontal line
-		lda #8
-		sta ycoord
-		lda #0
+; set horizontal and vertical position
+		lda #<160
 		sta xcoord
+		lda #>160
 		sta xcoord+1
-agin	jsr plotbit
-		jsr	wait
-		inc xcoord
-		bne next
-		inc xcoord+1
-next	lda xcoord+1
-		cmp #>320
-		bcc agin
-		lda xcoord
-		cmp #<320
-		bcc agin
-
-; draw vertical line
-		lda #0
+		lda #100
 		sta ycoord
-point	lda #<10
-		sta xcoord
-		lda #>10
-		sta xcoord+1
 		jsr plotbit
-		inc xcoord
-		bne skip
-		inc xcoord+1
-skip	jsr plotbit
+
+inf		jsr readJS	
+		jsr plotbit
 		jsr wait
-		ldx	ycoord
-		inx
-		stx ycoord
-		cpx #200
-		bcc point
-
-
-inf		jmp	inf
+		jmp	inf
